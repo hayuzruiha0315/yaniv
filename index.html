@@ -325,6 +325,13 @@ window.addEventListener('error', function(e){
   }
   function handTotal(h){ return h.reduce((s,c)=>s+c.value,0); }
   function cardText(c){ return c.rank==='JOKER' ? 'JOKER' : `${c.sym}${c.rank}`; }
+  function cardCompare(a,b){
+    const ao = a.rank==='JOKER' ? 99 : a.order;
+    const bo = b.rank==='JOKER' ? 99 : b.order;
+    if(ao!==bo) return ao-bo;
+    const suitOrder = {H:0,D:1,C:2,S:3,J:4};
+    return (suitOrder[a.suit] ?? 9) - (suitOrder[b.suit] ?? 9);
+  }
 
   function log(msg){
     const d=document.createElement('div');
@@ -367,7 +374,7 @@ window.addEventListener('error', function(e){
     $('roundNo').textContent=`ROUND ${round}`;
 
     $('playerHand').innerHTML='';
-    player.forEach(c=>$('playerHand').appendChild(cardNode(c,true)));
+    player.slice().sort(cardCompare).forEach(c=>$('playerHand').appendChild(cardNode(c,true)));
 
     $('cpuHand').innerHTML='';
     cpu.forEach(()=>$('cpuHand').appendChild(backNode()));
