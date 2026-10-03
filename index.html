@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ヤニブ" />
+  <title>ヤニブ - 2人対戦</title>
+  <style>
+    :root{
+      --bg:#0f172a;
+      --panel:#111827;
+      --panel2:#1f2937;
+      --text:#f8fafc;
+      --muted:#94a3b8;
+      --accent:#f59e0b;
+      --accent2:#22c55e;
+      --danger:#ef4444;
+      --card:#ffffff;
+      --black:#111827;
+      --red:#dc2626;
+      --line:#334155;
+    }
+    *{box-sizing:border-box} button,.card,.pile{touch-action:manipulation}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",sans-serif;
+      background:radial-gradient(circle at top,#1e293b 0,#0f172a 45%,#020617 100%);
+      color:var(--text);
+      -webkit-tap-highlight-color:transparent;
+    }
+    button,select{font:inherit}
+    .app{
+      width:min(100%,760px);
+      margin:0 auto;
+      padding:env(safe-area-inset-top) 14px calc(20px + env(safe-area-inset-bottom));
+    }
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 0 8px;
+    }
+    h1{font-size:1.35rem;margin:0}
+    .small{font-size:.83rem;color:var(--muted)}
+    .toolbar{
+      display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+      background:rgba(17,24,39,.86);
+      border:1px solid var(--line);
+      border-radius:16px;padding:10px;margin-bottom:10px;
+      backdrop-filter:blur(10px);
+    }
+    .seg{
+      display:flex;background:#0b1220;border-radius:12px;padding:3px;gap:3px;
+    }
+    .seg button{
+      border:0;background:transparent;color:var(--muted);
+      padding:8px 12px;border-radius:9px;font-weight:700;
+    }
+    .seg button.active{background:var(--accent);color:#111827}
+    .btn{
+      border:1px solid var(--line);
+      background:var(--panel2);
+      color:var(--text);
+      padding:9px 12px;border-radius:11px;font-weight:700;
+    }
+    .btn:active{transform:scale(.98)}
+    .btn.primary{background:var(--accent);color:#111827;border-color:var(--accent)}
+    .btn.good{background:var(--accent2);color:#052e16;border-color:var(--accent2)}
+    .btn.danger{background:var(--danger);border-color:var(--danger)}
+    .btn:disabled{opacity:.35;filter:grayscale(.2)}
+    .scoreboard{
+      display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;
+    }
+    .score{
+      background:rgba(17,24,39,.88);
+      border:1px solid var(--line);
+      border-radius:16px;padding:12px;
+    }
+    .score .name{font-weight:800}
+    .score .num{font-size:1.8rem;font-weight:900}
+    .score .handtotal{font-size:.85rem;color:var(--muted)}
+    .table{
+      background:linear-gradient(180deg,rgba(6,95,70,.55),rgba(4,120,87,.32));
+      border:1px solid #166534;
+      border-radius:22px;
+      padding:14px;
+      min-height:460px;
+      box-shadow:inset 0 0 50px rgba(0,0,0,.18);
+    }
+    .section-title{
+      display:flex;align-items:center;justify-content:space-between;
+      font-size:.88rem;color:#d1fae5;margin:2px 2px 8px;
+    }
+    .hand{
+      display:flex;gap:7px;overflow-x:auto;padding:4px 2px 10px;
+      min-height:116px;scrollbar-width:none;
+    }
+    .hand::-webkit-scrollbar{display:none}
+    .card{
+      position:relative;
+      flex:0 0 66px;height:96px;background:var(--card);border-radius:10px;
+      color:var(--black);box-shadow:0 5px 10px rgba(0,0,0,.28);
+      border:2px solid rgba(255,255,255,.8);
+      user-select:none;
+      transition:.12s transform,.12s box-shadow;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:900;font-size:1.72rem;
+    }
+    .card.red{color:var(--red)}
+    .card .corner{
+      position:absolute;left:6px;top:5px;font-size:.84rem;line-height:.9;text-align:center;
+    }
+    .card .corner.bottom{left:auto;top:auto;right:6px;bottom:5px;transform:rotate(180deg)}
+    .card.selected{
+      transform:translateY(-10px);
+      box-shadow:0 0 0 3px var(--accent),0 8px 16px rgba(0,0,0,.35);
+    }
+    .card.back{
+      background:
+        linear-gradient(135deg,rgba(255,255,255,.12) 25%,transparent 25%) -8px 0/16px 16px,
+        linear-gradient(225deg,rgba(255,255,255,.12) 25%,transparent 25%) -8px 0/16px 16px,
+        linear-gradient(315deg,rgba(255,255,255,.12) 25%,transparent 25%) 0 0/16px 16px,
+        linear-gradient(45deg,rgba(255,255,255,.12) 25%,#1d4ed8 25%) 0 0/16px 16px;
+      border-color:#bfdbfe;color:#fff;
+    }
+    .card.joker{font-size:1rem;letter-spacing:.04em}
+    .middle{
+      display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
+      margin:8px 0 14px;
+    }
+    .pile-wrap{text-align:center}
+    .pile-label{font-size:.75rem;color:#d1fae5;margin-top:5px}
+    .pile{
+      width:70px;height:100px;margin:0 auto;cursor:pointer;
+    }
+    .pile .card{width:70px;height:100px}
+    .pile.disabled{opacity:.45;pointer-events:none}
+    .turnbox{text-align:center;min-width:110px}
+    .turn{
+      font-weight:900;background:rgba(17,24,39,.78);border-radius:999px;
+      padding:8px 12px;display:inline-block;border:1px solid rgba(255,255,255,.14);
+    }
+    .actions{
+      display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px;
+    }
+    .yaniv{
+      width:100%;font-size:1.18rem;padding:13px;
+      background:linear-gradient(90deg,#f59e0b,#facc15);
+      color:#111827;border:0;border-radius:14px;font-weight:1000;
+      box-shadow:0 5px 16px rgba(245,158,11,.28);
+    }
+    .yaniv:disabled{opacity:.3;box-shadow:none}
+    .log{
+      margin-top:10px;background:rgba(17,24,39,.88);border:1px solid var(--line);
+      border-radius:16px;padding:12px;max-height:160px;overflow:auto;
+      font-size:.9rem;line-height:1.55;
+    }
+    .log div+div{margin-top:4px}
+    .status{
+      min-height:24px;text-align:center;font-weight:800;margin-top:8px;color:#fef3c7;
+    }
+    .modal{
+      position:fixed;inset:0;background:rgba(2,6,23,.76);
+      display:none;align-items:center;justify-content:center;padding:20px;z-index:50;
+    }
+    .modal.show{display:flex}
+    .modal-card{
+      width:min(100%,420px);background:#111827;border:1px solid var(--line);
+      border-radius:22px;padding:20px;text-align:center;box-shadow:0 22px 70px rgba(0,0,0,.5);
+    }
+    .big{font-size:2rem;font-weight:1000;margin:4px 0 10px}
+    .reveal{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+    .reveal .card{flex-basis:54px;width:54px;height:78px;font-size:1.35rem}
+    .rule-note{
+      margin-top:10px;font-size:.78rem;color:var(--muted);line-height:1.45;
+    }
+    @media (max-width:420px){
+      .card{flex-basis:60px;height:88px}
+      .pile,.pile .card{width:64px;height:92px}
+      .table{padding:11px}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>🃏 ヤニブ</h1>
+      <div class="small">2人対戦・CPU戦</div>
+    </div>
+    <button class="btn" id="newMatchBtn">試合リセット</button>
+  </header>
+
+  <div class="small" style="margin:-2px 2px 10px;color:#cbd5e1">Safariで開いたら「共有 → ホーム画面に追加」でアプリ風に使えるよ。</div>
+
+  <div class="toolbar">
+    <strong>ヤニブ宣言：</strong>
+    <div class="seg" id="thresholdSeg">
+      <button data-v="3">3以下</button>
+      <button data-v="5">5以下</button>
+      <button data-v="7" class="active">7以下</button>
+    </div>
+    <span class="small">アサフあり / 200点で終了</span>
+  </div>
+
+  <div class="scoreboard">
+    <div class="score">
+      <div class="name">あなた</div>
+      <div class="num" id="playerScore">0</div>
+      <div class="handtotal">手札 <span id="playerTotal">–</span>点</div>
+    </div>
+    <div class="score">
+      <div class="name">CPU</div>
+      <div class="num" id="cpuScore">0</div>
+      <div class="handtotal">手札 <span id="cpuCount">5</span>枚</div>
+    </div>
+  </div>
+
+  <div class="table">
+    <div class="section-title">
+      <span>CPUの手札</span><span id="roundNo">ROUND 1</span>
+    </div>
+    <div class="hand" id="cpuHand"></div>
+
+    <div class="middle">
+      <div class="pile-wrap">
+        <div class="pile" id="deckPile"></div>
+        <div class="pile-label">山札から引く</div>
+      </div>
+
+      <div class="turnbox">
+        <div class="turn" id="turnLabel">あなたの番</div>
+        <div class="status" id="status"></div>
+      </div>
+
+      <div class="pile-wrap">
+        <div class="pile" id="discardPile"></div>
+        <div class="pile-label">捨て札を拾う</div>
+      </div>
+    </div>
+
+    <div class="section-title">
+      <span>あなたの手札</span><span>タップで選択</span>
+    </div>
+    <div class="hand" id="playerHand"></div>
+
+    <div class="actions">
+      <button class="btn primary" id="discardBtn">選択カードを捨てる</button>
+      <button class="btn" id="cancelBtn">選択解除</button>
+      <button class="yaniv" id="yanivBtn">ヤニブ！</button>
+    </div>
+  </div>
+
+  <div class="log" id="log"></div>
+  <div class="rule-note">
+    捨てられる組み合わせ：1枚 / 同じ数字の複数枚 / 同一スートの3枚以上の連番。
+    捨てた後に「山札」か「場の一番上」を1枚引きます。ジョーカーは0点。
+  </div>
+</div>
+
+<div class="modal" id="resultModal">
+  <div class="modal-card">
+    <div class="big" id="resultTitle">ヤニブ！</div>
+    <div id="resultText"></div>
+    <div class="reveal" id="revealCards"></div>
+    <button class="btn good" id="nextRoundBtn">次のラウンド</button>
+  </div>
+</div>
+
+<script>
+window.addEventListener('error', function(e){
+  var st=document.getElementById('status');
+  if(st) st.textContent='エラー: '+(e && e.message ? e.message : 'ゲームを起動できませんでした');
+});
+(() => {
+  const SUITS = [
+    {k:'H', s:'♥', red:true},
+    {k:'D', s:'♦', red:true},
+    {k:'C', s:'♣', red:false},
+    {k:'S', s:'♠', red:false},
+  ];
+  const RANKS = [
+    {r:'A', v:1, o:1},
+    {r:'2', v:2, o:2},{r:'3', v:3, o:3},{r:'4', v:4, o:4},{r:'5', v:5, o:5},
+    {r:'6', v:6, o:6},{r:'7', v:7, o:7},{r:'8', v:8, o:8},{r:'9', v:9, o:9},
+    {r:'10', v:10, o:10},{r:'J', v:10, o:11},{r:'Q', v:10, o:12},{r:'K', v:10, o:13}
+  ];
+
+  let threshold = 7;
+  let scores = {p:0,c:0};
+  let round = 1;
+  let deck = [], discard = [], player = [], cpu = [];
+  let selected = new Set();
+  let phase = 'discard'; // discard -> draw
+  let turn = 'player';
+  let roundOver = false;
+  let lastPlayerDiscard = [];
+
+  const $ = id => document.getElementById(id);
+  const logEl = $('log');
+
+  function mkDeck(){
+    let a = [];
+    let id = 0;
+    for(const s of SUITS){
+      for(const r of RANKS){
+        a.push({id:id++, suit:s.k, sym:s.s, red:s.red, rank:r.r, value:r.v, order:r.o});
+      }
+    }
+    a.push({id:id++, suit:'J', sym:'★', red:false, rank:'JOKER', value:0, order:0});
+    a.push({id:id++, suit:'J', sym:'★', red:true, rank:'JOKER', value:0, order:0});
+    return a;
+  }
+  function shuffle(a){
+    for(let i=a.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+  function handTotal(h){ return h.reduce((s,c)=>s+c.value,0); }
+  function cardText(c){ return c.rank==='JOKER' ? 'JOKER' : `${c.sym}${c.rank}`; }
+
+  function log(msg){
+    const d=document.createElement('div');
+    d.textContent=msg;
+    logEl.appendChild(d);
+    logEl.scrollTop=logEl.scrollHeight;
+  }
+
+  function cardNode(c, selectable=false){
+    const d=document.createElement('div');
+    d.className='card'+(c.red?' red':'')+(c.rank==='JOKER'?' joker':'');
+    d.dataset.id=c.id;
+    if(c.rank==='JOKER'){
+      d.innerHTML=`<div class="corner">★<br>0</div><div>JOKER</div><div class="corner bottom">★<br>0</div>`;
+    }else{
+      d.innerHTML=`<div class="corner">${c.rank}<br>${c.sym}</div><div>${c.sym}</div><div class="corner bottom">${c.rank}<br>${c.sym}</div>`;
+    }
+    if(selectable){
+      if(selected.has(c.id)) d.classList.add('selected');
+      d.onclick=()=>{
+        if(turn!=='player'||phase!=='discard'||roundOver) return;
+        if(selected.has(c.id)) selected.delete(c.id); else selected.add(c.id);
+        render();
+      };
+    }
+    return d;
+  }
+  function backNode(){
+    const d=document.createElement('div');
+    d.className='card back';
+    d.textContent='YANIV';
+    return d;
+  }
+
+  function render(){
+    $('playerScore').textContent=scores.p;
+    $('cpuScore').textContent=scores.c;
+    $('playerTotal').textContent=handTotal(player);
+    $('cpuCount').textContent=cpu.length;
+    $('roundNo').textContent=`ROUND ${round}`;
+
+    $('playerHand').innerHTML='';
+    player.forEach(c=>$('playerHand').appendChild(cardNode(c,true)));
+
+    $('cpuHand').innerHTML='';
+    cpu.forEach(()=>$('cpuHand').appendChild(backNode()));
+
+    $('deckPile').innerHTML='';
+    if(deck.length){
+      $('deckPile').appendChild(backNode());
+      $('deckPile').classList.toggle('disabled', !(turn==='player'&&phase==='draw'&&!roundOver));
+    }else{
+      $('deckPile').textContent='空';
+    }
+
+    $('discardPile').innerHTML='';
+    if(discard.length){
+      $('discardPile').appendChild(cardNode(discard[discard.length-1],false));
+      $('discardPile').classList.toggle('disabled', !(turn==='player'&&phase==='draw'&&!roundOver));
+    }
+
+    $('turnLabel').textContent = turn==='player' ? (phase==='discard'?'あなたの番':'1枚引いてね') : 'CPUの番';
+    $('discardBtn').disabled = !(turn==='player'&&phase==='discard'&&selected.size>0&&!roundOver);
+    $('cancelBtn').disabled = selected.size===0;
+    $('yanivBtn').disabled = !(turn==='player'&&phase==='discard'&&handTotal(player)<=threshold&&!roundOver);
+    $('yanivBtn').textContent=`ヤニブ！ (${threshold}点以下)`;
+
+    const st=$('status');
+    if(roundOver) st.textContent='';
+    else if(turn==='player'&&phase==='discard'){
+      st.textContent = selected.size ? `${selected.size}枚選択中` : '捨てるカードを選択';
+    }else if(turn==='player'&&phase==='draw') st.textContent='山札か捨て札をタップ';
+    else st.textContent='考え中…';
+  }
+
+  function isValidDiscard(cards){
+    if(cards.length===1) return true;
+    if(cards.some(c=>c.rank==='JOKER')) return false; // 簡易ルール：ジョーカー連結なし
+    const sameRank = cards.every(c=>c.rank===cards[0].rank);
+    if(sameRank) return true;
+    if(cards.length<3) return false;
+    const sameSuit = cards.every(c=>c.suit===cards[0].suit);
+    if(!sameSuit) return false;
+    const ord = cards.map(c=>c.order).sort((a,b)=>a-b);
+    return ord.every((v,i)=>i===0||v===ord[i-1]+1);
+  }
+
+  function refillDeckIfNeeded(){
+    if(deck.length) return;
+    if(discard.length<=1) return;
+    const top=discard.pop();
+    deck=shuffle(discard.splice(0));
+    discard=[top];
+    log('捨て札を混ぜて山札を作り直した。');
+  }
+
+  function startRound(){
+    roundOver=false;
+    selected.clear();
+    phase='discard';
+    turn='player';
+    deck=shuffle(mkDeck());
+    player=[]; cpu=[]; discard=[];
+    for(let i=0;i<5;i++){ player.push(deck.pop()); cpu.push(deck.pop()); }
+    discard.push(deck.pop());
+    log(`--- ROUND ${round} ---`);
+    log(`ヤニブ宣言は ${threshold}点以下。`);
+    render();
+  }
+
+  function discardSelected(){
+    const cards=player.filter(c=>selected.has(c.id));
+    if(!isValidDiscard(cards)){
+      $('status').textContent='その組み合わせは捨てられないよ';
+      return;
+    }
+    lastPlayerDiscard=cards.slice();
+    player=player.filter(c=>!selected.has(c.id));
+    cards.forEach(c=>discard.push(c));
+    log(`あなた：${cards.map(cardText).join('・')} を捨てた。`);
+    selected.clear();
+    phase='draw';
+    refillDeckIfNeeded();
+    render();
+  }
+
+  function playerDraw(from){
+    if(turn!=='player'||phase!=='draw'||roundOver) return;
+    refillDeckIfNeeded();
+    let c;
+    if(from==='deck'){
+      if(!deck.length) return;
+      c=deck.pop();
+      log(`あなた：山札から1枚引いた。`);
+    }else{
+      if(!discard.length) return;
+      c=discard.pop();
+      log(`あなた：${cardText(c)} を拾った。`);
+    }
+    player.push(c);
+    phase='discard';
+    turn='cpu';
+    render();
+    setTimeout(cpuTurn,650);
+  }
+
+  function allCombos(hand){
+    const combos=[];
+    hand.forEach(c=>combos.push([c]));
+    // same rank sets 2+
+    const byRank={};
+    hand.filter(c=>c.rank!=='JOKER').forEach(c=>{ if(!byRank[c.rank]) byRank[c.rank]=[]; byRank[c.rank].push(c); });
+    for(const arr of Object.values(byRank)){
+      if(arr.length>=2){
+        // largest set is usually best
+        for(let n=2;n<=arr.length;n++) combos.push(arr.slice(0,n));
+      }
+    }
+    // runs 3+
+    for(const s of SUITS){
+      const arr=hand.filter(c=>c.suit===s.k).sort((a,b)=>a.order-b.order);
+      for(let i=0;i<arr.length;i++){
+        let run=[arr[i]];
+        for(let j=i+1;j<arr.length;j++){
+          if(arr[j].order===run[run.length-1].order+1){
+            run.push(arr[j]);
+            if(run.length>=3) combos.push(run.slice());
+          }else if(arr[j].order>run[run.length-1].order+1) break;
+        }
+      }
+    }
+    return combos.filter(isValidDiscard);
+  }
+
+  function bestCpuDiscard(){
+    const combos=allCombos(cpu);
+    combos.sort((a,b)=>{
+      const va=a.reduce((s,c)=>s+c.value,0), vb=b.reduce((s,c)=>s+c.value,0);
+      if(vb!==va) return vb-va;
+      return b.length-a.length;
+    });
+    return combos[0] || [cpu.slice().sort((a,b)=>b.value-a.value)[0]];
+  }
+
+  function cpuShouldTakeDiscard(top){
+    if(!top) return false;
+    // take a low card, or a card that makes same-rank pair / useful run
+    if(top.value<=2) return true;
+    if(cpu.some(c=>c.rank===top.rank && top.rank!=='JOKER')) return true;
+    if(top.rank!=='JOKER'){
+      const sameSuit=cpu.filter(c=>c.suit===top.suit);
+      if(sameSuit.some(c=>Math.abs(c.order-top.order)<=2)) return true;
+    }
+    return false;
+  }
+
+  function cpuTurn(){
+    if(roundOver) return;
+    if(handTotal(cpu)<=threshold){
+      declareYaniv('cpu');
+      return;
+    }
+    const cards=bestCpuDiscard();
+    const ids=new Set(cards.map(c=>c.id));
+    cpu=cpu.filter(c=>!ids.has(c.id));
+    cards.forEach(c=>discard.push(c));
+    log(`CPU：${cards.map(cardText).join('・')} を捨てた。`);
+    refillDeckIfNeeded();
+
+    const top=discard[discard.length-1];
+    let drawn;
+    // CPU can't immediately pick back the exact card(s) it just discarded in real play.
+    // So use deck unless a prior visible discard remains meaningful; simplified CPU always deck after its own discard.
+    if(deck.length){
+      drawn=deck.pop();
+      cpu.push(drawn);
+      log('CPU：山札から1枚引いた。');
+    }
+    turn='player'; phase='discard';
+    render();
+  }
+
+  function declareYaniv(who){
+    if(roundOver) return;
+    const dec = who==='player' ? player : cpu;
+    const opp = who==='player' ? cpu : player;
+    const decTotal=handTotal(dec), oppTotal=handTotal(opp);
+    if(decTotal>threshold) return;
+
+    roundOver=true;
+    const assaf = oppTotal<=decTotal;
+    let title, text;
+    if(assaf){
+      const penalty=30+decTotal;
+      if(who==='player') scores.p+=penalty; else scores.c+=penalty;
+      title='ASSAF！';
+      text=`${who==='player'?'あなた':'CPU'}が ${decTotal}点でヤニブ宣言。しかし相手は ${oppTotal}点。宣言側に ${penalty}点ペナルティ！`;
+      log(`アサフ！ 宣言側に ${penalty}点。`);
+    }else{
+      if(who==='player') scores.c+=oppTotal; else scores.p+=oppTotal;
+      title='YANIV！';
+      text=`${who==='player'?'あなた':'CPU'}が ${decTotal}点で成功。相手に ${oppTotal}点加算。`;
+      log(`ヤニブ成功！ 相手に ${oppTotal}点。`);
+    }
+    showResult(title,text,opp);
+    render();
+  }
+
+  function showResult(title,text,revealHand){
+    $('resultTitle').textContent=title;
+    $('resultText').textContent=text;
+    $('revealCards').innerHTML='';
+    revealHand.forEach(c=>$('revealCards').appendChild(cardNode(c,false)));
+    const ended = scores.p>=200 || scores.c>=200;
+    $('nextRoundBtn').textContent = ended ? '試合結果を見る' : '次のラウンド';
+    $('resultModal').classList.add('show');
+  }
+
+  function nextRound(){
+    $('resultModal').classList.remove('show');
+    if(scores.p>=200 || scores.c>=200){
+      const winner = scores.p<scores.c ? 'あなたの勝ち！' : scores.c<scores.p ? 'CPUの勝ち！' : '引き分け！';
+      alert(`試合終了\nあなた ${scores.p}点 / CPU ${scores.c}点\n${winner}\n（ヤニブは点数が低い方が勝ち）`);
+      return;
+    }
+    round++;
+    startRound();
+  }
+
+  function resetMatch(){
+    scores={p:0,c:0}; round=1; logEl.innerHTML='';
+    startRound();
+  }
+
+  $('discardBtn').onclick=discardSelected;
+  $('cancelBtn').onclick=()=>{selected.clear();render();};
+  $('deckPile').onclick=()=>playerDraw('deck');
+  $('discardPile').onclick=()=>playerDraw('discard');
+  $('yanivBtn').onclick=()=>declareYaniv('player');
+  $('nextRoundBtn').onclick=nextRound;
+  $('newMatchBtn').onclick=resetMatch;
+
+  $('thresholdSeg').querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{
+      threshold=Number(b.dataset.v);
+      $('thresholdSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));
+      log(`ヤニブ宣言ラインを ${threshold}点以下に変更。`);
+      render();
+    };
+  });
+
+  startRound();
+})();
+</script>
+</body>
+</html>
