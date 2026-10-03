@@ -300,6 +300,7 @@ window.addEventListener('error', function(e){
   let turn = 'player';
   let roundOver = false;
   let lastPlayerDiscard = [];
+  let drawDiscardCard = null;
 
   const $ = id => document.getElementById(id);
   const logEl = $('log');
@@ -388,9 +389,12 @@ window.addEventListener('error', function(e){
     }
 
     $('discardPile').innerHTML='';
-    if(discard.length){
-      $('discardPile').appendChild(cardNode(discard[discard.length-1],false));
-      $('discardPile').classList.toggle('disabled', !(turn==='player'&&phase==='draw'&&!roundOver));
+    const visibleDiscard = (turn==='player' && phase==='draw' && drawDiscardCard)
+      ? drawDiscardCard
+      : discard[discard.length-1];
+    if(visibleDiscard){
+      $('discardPile').appendChild(cardNode(visibleDiscard,false));
+      $('discardPile').classList.toggle('disabled', !(turn==='player'&&phase==='draw'&&drawDiscardCard&&!roundOver));
     }
 
     $('turnLabel').textContent = turn==='player' ? (phase==='discard'?'あなたの番':'1枚引いてね') : 'CPUの番';
@@ -431,6 +435,7 @@ window.addEventListener('error', function(e){
   function startRound(){
     roundOver=false;
     selected.clear();
+    drawDiscardCard=null;
     phase='discard';
     turn='player';
     deck=shuffle(mkDeck());
@@ -449,6 +454,7 @@ window.addEventListener('error', function(e){
       return;
     }
     lastPlayerDiscard=cards.slice();
+    drawDiscardCard = discard.length ? discard[discard.length-1] : null;
     player=player.filter(c=>!selected.has(c.id));
     cards.forEach(c=>discard.push(c));
     log(`あなた：${cards.map(cardText).join('・')} を捨てた。`);
@@ -467,11 +473,14 @@ window.addEventListener('error', function(e){
       c=deck.pop();
       log(`あなた：山札から1枚引いた。`);
     }else{
-      if(!discard.length) return;
-      c=discard.pop();
+      if(!drawDiscardCard) return;
+      const idx = discard.findIndex(x=>x.id===drawDiscardCard.id);
+      if(idx<0) return;
+      c=discard.splice(idx,1)[0];
       log(`あなた：${cardText(c)} を拾った。`);
     }
     player.push(c);
+    drawDiscardCard=null;
     phase='discard';
     turn='cpu';
     render();
