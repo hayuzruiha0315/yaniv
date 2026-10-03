@@ -314,6 +314,7 @@ window.addEventListener('error', function(e){
   let roundOver = false;
   let lastPlayerDiscard = [];
   let drawDiscardCard = null;
+  let nextStarter = 'player';
 
   const $ = id => document.getElementById(id);
   const logEl = $('log');
@@ -464,14 +465,16 @@ window.addEventListener('error', function(e){
     selected.clear();
     drawDiscardCard=null;
     phase='discard';
-    turn='player';
+    turn=nextStarter;
     deck=shuffle(mkDeck());
     player=[]; cpu=[]; discard=[];
     for(let i=0;i<5;i++){ player.push(deck.pop()); cpu.push(deck.pop()); }
     discard.push(deck.pop());
     log(`--- ROUND ${round} ---`);
     log(`ヤニブ宣言は ${threshold}点以下。`);
+    log(`${turn==='player'?'あなた':'CPU'}が先手。`);
     render();
+    if(turn==='cpu') setTimeout(cpuTurn,650);
   }
 
   function discardSelected(){
@@ -601,12 +604,14 @@ window.addEventListener('error', function(e){
     const assaf = oppTotal<=decTotal;
     let title, text;
     if(assaf){
+      nextStarter = who==='player' ? 'cpu' : 'player';
       const penalty=30+decTotal;
       if(who==='player') scores.p+=penalty; else scores.c+=penalty;
       title='ASSAF！';
       text=`${who==='player'?'あなた':'CPU'}が ${decTotal}点でヤニブ宣言。しかし相手は ${oppTotal}点。宣言側に ${penalty}点ペナルティ！`;
       log(`アサフ！ 宣言側に ${penalty}点。`);
     }else{
+      nextStarter = who;
       if(who==='player') scores.c+=oppTotal; else scores.p+=oppTotal;
       title='YANIV！';
       text=`${who==='player'?'あなた':'CPU'}が ${decTotal}点で成功。相手に ${oppTotal}点加算。`;
@@ -638,7 +643,7 @@ window.addEventListener('error', function(e){
   }
 
   function resetMatch(){
-    scores={p:0,c:0}; round=1; logEl.innerHTML='';
+    scores={p:0,c:0}; round=1; nextStarter='player'; logEl.innerHTML='';
     startRound();
   }
 
